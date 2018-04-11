@@ -18,8 +18,7 @@ int cidentify (char *name, int size){
 	
 
 	if (size >= 72){
-		strncpy(name, id_grupo, size);
-printf("%s\n", name);
+		strcpy(name, id_grupo);
 		return RETURN_OK;
 	}
 

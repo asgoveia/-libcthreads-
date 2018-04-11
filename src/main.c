@@ -7,11 +7,10 @@
 
 int main(int argc, const char * argv[]){
 
-char * name = NULL;
+char * name = (char*) malloc(sizeof(char)*72);
 
 int i = cidentify (name, 72);
 
-printf("%d\n", i);
 printf("%s\n", name);
 
 return 0;
