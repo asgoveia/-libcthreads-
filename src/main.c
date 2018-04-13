@@ -13,5 +13,7 @@ int i = cidentify (name, 72);
 
 printf("%s\n", name);
 
+int j = init();
+
 return 0;
 }

@@ -5,16 +5,102 @@
 #include "../include/cthread.h"
 #include "../include/cdata.h"
 
-FILA2 readyQueue;
-FILA2 blockedQueue;
-FILA2 finishedQueue;
-FILA2 readySuspendedQueue;
-FILA2 blockedSuspendedQueue;
+PFILA2 readyQueue;
+PFILA2 blockedQueue;
+PFILA2 finishedQueue;
+PFILA2 readySuspendedQueue;
+PFILA2 blockedSuspendedQueue;
 
 TCB_t * executingThread;
 
+ucontext_t SchedulerContext;
+int tCounter = 0;
+
 // -----------------------------------------------------------------------------
-int init(){}
+
+int dispatcher(){
+
+return 0;
+} // end method
+
+// -----------------------------------------------------------------------------
+
+void createSchedulerContext(){
+	
+	getcontext(&SchedulerContext);	
+	char stack_dispatcher[SIGSTKSZ];
+  	SchedulerContext.uc_stack.ss_sp = stack_dispatcher;
+  	SchedulerContext.uc_stack.ss_size = sizeof(stack_dispatcher);
+	makecontext( &SchedulerContext, (void (*)(void))dispatcher, 0);	
+} // end method
+
+// -----------------------------------------------------------------------------
+
+TCB_t* createThread(int prio){
+
+	TCB_t * newThread = malloc(sizeof(TCB_t));
+	
+	if(newThread != NULL){
+		newThread->tid = tCounter;
+		newThread->state = PROCST_CRIACAO;
+		newThread->prio = prio; 
+		tCounter++; 
+
+		newThread->context.uc_stack.ss_sp = malloc(SIGSTKSZ);
+  		newThread->context.uc_stack.ss_size = SIGSTKSZ;
+	}
+	return newThread;
+}
+
+// -----------------------------------------------------------------------------
+
+int createMainThread(ucontext_t MainContext)
+{	
+	int prio = 0;
+	TCB_t * mainThread = createThread(prio);
+
+	if(mainThread != NULL) 
+	{
+		mainThread->context = MainContext; 
+		mainThread->context.uc_link = NULL;
+		mainThread->state = PROCST_EXEC; 
+		executingThread = mainThread;
+		return mainThread->tid; 
+	}
+	return RETURN_ERROR;	
+}
+
+// -----------------------------------------------------------------------------
+
+int init(){
+	
+	int returnCode;
+	readyQueue = malloc(sizeof(FILA2));
+	blockedQueue = malloc(sizeof(FILA2));
+	finishedQueue = malloc(sizeof(FILA2));
+	readySuspendedQueue = malloc(sizeof(FILA2));
+	blockedSuspendedQueue = malloc(sizeof(FILA2));
+
+	CreateFila2(readyQueue);
+	CreateFila2(blockedQueue);
+	CreateFila2(finishedQueue);
+	CreateFila2(readySuspendedQueue);
+	CreateFila2(blockedSuspendedQueue);
+
+	executingThread = NULL;
+
+	createSchedulerContext(); 
+
+	ucontext_t MainContext;
+	returnCode = getcontext(&MainContext);
+	
+	if(returnCode == RETURN_OK){
+		returnCode = createMainThread(MainContext); 
+		return(returnCode);
+	}
+	return RETURN_ERROR;
+
+} // end method
 
 // -----------------------------------------------------------------------------
 
@@ -41,6 +127,6 @@ int ccreate (void *(*start)(void *), void *arg, int prio){
 	newThread->prio = prio;
 	
 	getcontext(&newThread->context);
-
+	return 0;
 	
 } // end method
