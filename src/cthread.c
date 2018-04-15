@@ -187,8 +187,7 @@ int searchThread(int tid, PFILA2 queue)
         {
             current = (PNODE2)GetAtIteratorFila2(queue);
             thread = (TCB_t *) current->node;
-            int t = &thread->tid;
-            if(t == tid)
+            if(&thread->tid == tid)
             {
                 return 1;
             }
