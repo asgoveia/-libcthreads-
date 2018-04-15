@@ -170,3 +170,29 @@ int cjoin(int tid)
     return 0;
 
 }
+
+// -----------------------------------------------------------------------------
+int searchThread(int tid, PFILA2 queue)
+{
+    TCB_t *thread;
+    PNODE2 current;
+
+    if (FirstFila2(queue) != 0){
+
+        printf("Erro ao setar para o primeiro da fila");
+        return RETURN_ERROR;
+    }
+
+    do
+        {
+            current = (PNODE2)GetAtIteratorFila2(queue);
+            thread = (TCB_t *) current->node;
+            int t = &thread->tid;
+            if(t == tid)
+            {
+                return 1;
+            }
+        }
+        while(NextFila2(queue) == 0);
+    return 0;
+}
