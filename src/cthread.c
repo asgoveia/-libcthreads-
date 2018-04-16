@@ -137,24 +137,16 @@ int ccreate (void *(*start)(void *), void *arg, int prio)
         init();
     }
 
-    TCB_t *newThread = malloc(sizeof(TCB_t));
-
-    newThread->tid = tCounter;
-    newThread->state = PROCST_CRIACAO;
-    newThread->prio = prio;
-    tCounter++;
+    TCB_t *newThread = createThread(prio);
 
     getcontext(&newThread->context);
 
     newThread->context.uc_link = &SchedulerContext;
-    newThread->context.uc_stack.ss_sp = malloc(SIGSTKSZ);
-    newThread->context.uc_stack.ss_size = SIGSTKSZ;
 
     makecontext(&newThread->context, (void (*)(void)) start, 1, arg);
     newThread->state = PROCST_APTO;
 
-
-    if(AppendFila2(readyQueue, (void *) newThread) != 0)
+    if(AppendFila2(readyQueue, newThread) != 0)
     {
         printf("Erro ao criar thread %d\n", newThread->tid);
         return RETURN_ERROR;
