@@ -5,6 +5,7 @@
 #include "../include/cthread.h"
 #include "../include/cdata.h"
 
+
 PFILA2 readyQueue;
 PFILA2 blockedQueue;
 PFILA2 finishedQueue;
@@ -54,6 +55,7 @@ TCB_t* createThread(int prio)
 
         newThread->context.uc_stack.ss_sp = malloc(SIGSTKSZ);
         newThread->context.uc_stack.ss_size = SIGSTKSZ;
+		newThread->waited = FALSE;
     }
     return newThread;
 }
@@ -132,8 +134,7 @@ int cidentify (char *name, int size)
 
 int ccreate (void *(*start)(void *), void *arg, int prio)
 {
-
-    if(!has_init){
+        if(!has_init){
         init();
     }
 
@@ -152,16 +153,10 @@ int ccreate (void *(*start)(void *), void *arg, int prio)
         return RETURN_ERROR;
     }
 
-    return newThread->tid;
+return newThread->tid;
 
 } // end method
 
-int cjoin(int tid)
-{
-
-    return 0;
-
-}
 
 // -----------------------------------------------------------------------------
 int searchThread(int tid, PFILA2 queue)
@@ -171,7 +166,7 @@ int searchThread(int tid, PFILA2 queue)
 
     if (FirstFila2(queue) != 0){
 
-        printf("Erro ao setar para o primeiro da fila");
+        printf("Erro ao setar para o primeiro da fila\n");
         return RETURN_ERROR;
     }
 
@@ -186,4 +181,95 @@ int searchThread(int tid, PFILA2 queue)
         }
         while(NextFila2(queue) == 0);
     return 0;
+}
+
+// -----------------------------------------------------------------------------
+
+TCB_t* returnTCB(int tid, PFILA2 queue)
+{
+    TCB_t *thread;
+    PNODE2 current;
+
+    if (FirstFila2(queue) != 0){
+
+        printf("Erro ao setar para o primeiro da fila\n");
+        return NULL;
+    }
+
+    do
+        {
+            current = (PNODE2)GetAtIteratorFila2(queue);
+            thread = (TCB_t *) current->node;
+            if(&thread->tid == tid)
+            {
+                //thread->waited = TRUE;
+                return thread;
+            }
+        }
+        while(NextFila2(queue) == 0);
+    return NULL;
+}
+
+
+// -----------------------------------------------------------------------------
+
+TCB_t* findThread(int tid){
+
+    TCB_t* tcb;
+
+    if(searchThread(tid, readyQueue)){
+
+        tcb = returnTCB(tid, readyQueue);
+    }
+
+    else if(searchThread(tid, blockedQueue)){
+
+        tcb = returnTCB(tid, blockedQueue);
+    }
+
+    else if(searchThread(tid, readySuspendedQueue)){
+
+        tcb = returnTCB(tid, readySuspendedQueue);
+    }
+
+    else if(searchThread(tid, blockedSuspendedQueue)){
+
+        tcb = returnTCB(tid, blockedSuspendedQueue);
+    }
+
+    else{
+        printf("cjoin: thread nao existe\n");
+        return NULL;
+    }
+
+
+    return tcb;
+}
+
+
+
+// -----------------------------------------------------------------------------
+
+int cjoin(int tid)
+{
+    if(!has_init){
+        init();
+    }
+
+    TCB_t* waitFor;
+
+    waitFor = findThread(tid);
+
+    if(waitFor != NULL && &(waitFor->waited) != TRUE){
+
+        AppendFila2(blockedQueue, (void *) executingThread);
+        executingThread->state = PROCST_BLOQ;
+        //swapcontext();
+        return RETURN_OK;
+    }
+
+    else{
+        return RETURN_ERROR;
+    }
+
 }
