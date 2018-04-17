@@ -1,10 +1,10 @@
 /*
- * cdata.h: arquivo de inclus„o de uso apenas na geraÁ„o da libpithread
+ * cdata.h: arquivo de inclus√£o de uso apenas na gera√ß√£o da libpithread
  *
  * Esse arquivo pode ser modificado. ENTRETANTO, deve ser utilizada a TCB fornecida.
- * Se necess·rio, pode-se ACRESCENTAR campos ao TCP
+ * Se necess√°rio, pode-se ACRESCENTAR campos ao TCP
  *
- * VERS√O: 17/03/2018
+ * VERS√ÉO: 17/03/2018
  *
  */
 #ifndef __cdata__
@@ -21,18 +21,21 @@
 
 #define RETURN_ERROR -1
 #define RETURN_OK 0
+#define TRUE 1
+#define FALSE 0
 
 /* Os campos "tid", "state" e "context" dessa estrutura devem ser mantidos e usados convenientemente
-   Pode-se acrescentar outros campos AP”S os campos obrigatÛrios dessa estrutura
+   Pode-se acrescentar outros campos AP√ìS os campos obrigat√≥rios dessa estrutura
 */
 typedef struct s_TCB { 
 	int		tid; 		// identificador da thread
 	int		state;		// estado em que a thread se encontra
-					// 0: CriaÁ„o; 1: Apto; 2: ExecuÁ„o; 3: Bloqueado; 4: TÈrmino; 5: Apto-Suspenso; 6: Bloqueado-Suspenso
-	int 		prio;		// Prioridade associada a thread N√O USADO NESSA IMPLEMENTA«√O
-	ucontext_t 	context;	// contexto de execuÁ„o da thread (SP, PC, GPRs e recursos) 
+					// 0: Cria√ß√£o; 1: Apto; 2: Execu√ß√£o; 3: Bloqueado; 4: T√©rmino; 5: Apto-Suspenso; 6: Bloqueado-Suspenso
+	int 		prio;		// Prioridade associada a thread N√ÉO USADO NESSA IMPLEMENTA√á√ÉO
+	ucontext_t 	context;	// contexto de execu√ß√£o da thread (SP, PC, GPRs e recursos) 
+	int waited;
 	
-	/* Se necess·rio, pode-se acresecentar campos nessa estrutura A PARTIR DAQUI! */
+	/* Se necess√°rio, pode-se acresecentar campos nessa estrutura A PARTIR DAQUI! */
 	
 	
 } TCB_t; 
