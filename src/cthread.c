@@ -14,7 +14,7 @@ PFILA2 blockedSuspendedQueue;
 
 TCB_t * executingThread;
 
-ucontext_t SchedulerContext;
+ucontext_t DispatcherContext;
 int tCounter = 0;
 int has_init = 0;
 
@@ -22,21 +22,21 @@ int has_init = 0;
 // -----------------------------------------------------------------------------
 
 int dispatcher()
-{
-
+{  printf("\nMae to na globo\n");
+	setcontext(&(executingThread->context));
     return 0;
 } // end method
 
 // -----------------------------------------------------------------------------
 
-void createSchedulerContext()
+void createDispatcherContext()
 {
 
-    getcontext(&SchedulerContext);
+    getcontext(&DispatcherContext);
     char stack_dispatcher[SIGSTKSZ];
-    SchedulerContext.uc_stack.ss_sp = stack_dispatcher;
-    SchedulerContext.uc_stack.ss_size = sizeof(stack_dispatcher);
-    makecontext( &SchedulerContext, (void (*)(void))dispatcher, 0);
+    DispatcherContext.uc_stack.ss_sp = stack_dispatcher;
+    DispatcherContext.uc_stack.ss_size = sizeof(stack_dispatcher);
+    makecontext( &DispatcherContext, (void (*)(void))dispatcher, 0);
 } // end method
 
 // -----------------------------------------------------------------------------
@@ -51,11 +51,12 @@ TCB_t* createThread(int prio)
         newThread->tid = tCounter;
         newThread->state = PROCST_CRIACAO;
         newThread->prio = prio;
+	newThread->waitedBy = NULL;
+	newThread->waitingFor = NULL;
         tCounter++;
 
         newThread->context.uc_stack.ss_sp = malloc(SIGSTKSZ);
         newThread->context.uc_stack.ss_size = SIGSTKSZ;
-		newThread->waited = FALSE;
     }
     return newThread;
 }
@@ -99,7 +100,7 @@ int init()
 
     executingThread = NULL;
 
-    createSchedulerContext();
+    createDispatcherContext();
 
     ucontext_t MainContext;
     returnCode = getcontext(&MainContext);
@@ -142,12 +143,15 @@ int ccreate (void *(*start)(void *), void *arg, int prio)
 
     getcontext(&newThread->context);
 
-    newThread->context.uc_link = &SchedulerContext;
+    newThread->context.uc_link = &DispatcherContext;
 
     makecontext(&newThread->context, (void (*)(void)) start, 1, arg);
     newThread->state = PROCST_APTO;
 
-    if(AppendFila2(readyQueue, newThread) != 0)
+    PNODE2 newThreadNode = malloc(sizeof(PNODE2));
+    newThreadNode->node = newThread;
+
+    if(AppendFila2(readyQueue, newThreadNode) != 0)
     {
         printf("Erro ao criar thread %d\n", newThread->tid);
         return RETURN_ERROR;
@@ -159,6 +163,7 @@ return newThread->tid;
 
 
 // -----------------------------------------------------------------------------
+
 int searchThread(int tid, PFILA2 queue)
 {
     TCB_t *thread;
@@ -174,7 +179,7 @@ int searchThread(int tid, PFILA2 queue)
         {
             current = (PNODE2)GetAtIteratorFila2(queue);
             thread = (TCB_t *) current->node;
-            if(&thread->tid == tid)
+            if(thread->tid == tid)
             {
                 return 1;
             }
@@ -200,9 +205,8 @@ TCB_t* returnTCB(int tid, PFILA2 queue)
         {
             current = (PNODE2)GetAtIteratorFila2(queue);
             thread = (TCB_t *) current->node;
-            if(&thread->tid == tid)
+            if(thread->tid == tid)
             {
-                //thread->waited = TRUE;
                 return thread;
             }
         }
@@ -217,31 +221,30 @@ TCB_t* findThread(int tid){
 
     TCB_t* tcb;
 
-    if(searchThread(tid, readyQueue)){
 
+    if(searchThread(tid, readyQueue)){
         tcb = returnTCB(tid, readyQueue);
     }
 
     else if(searchThread(tid, blockedQueue)){
-
         tcb = returnTCB(tid, blockedQueue);
+
     }
 
     else if(searchThread(tid, readySuspendedQueue)){
-
         tcb = returnTCB(tid, readySuspendedQueue);
+
     }
 
     else if(searchThread(tid, blockedSuspendedQueue)){
-
         tcb = returnTCB(tid, blockedSuspendedQueue);
+
     }
 
     else{
         printf("cjoin: thread nao existe\n");
         return NULL;
     }
-
 
     return tcb;
 }
@@ -256,16 +259,28 @@ int cjoin(int tid)
         init();
     }
 
-    TCB_t* waitFor;
+    TCB_t* waitFor = NULL;
+
+    TCB_t * waiting;
+    waiting = executingThread;
+
 
     waitFor = findThread(tid);
 
-    if(waitFor != NULL && &(waitFor->waited) != TRUE){
+    if(waitFor != NULL && waitFor->waitedBy == NULL){	
+	
+   	PNODE2 blockedNode = malloc(sizeof(PNODE2));
+    	blockedNode->node = waiting;
 
-        AppendFila2(blockedQueue, (void *) executingThread);
+        AppendFila2(blockedQueue, blockedNode);
         executingThread->state = PROCST_BLOQ;
-        //swapcontext();
-        return RETURN_OK;
+	waitFor->waitedBy = waiting;
+	waiting->waitingFor = waitFor;
+
+        if (swapcontext(&(executingThread->context), &(DispatcherContext)) == -1)
+		return RETURN_ERROR;
+       
+	 return RETURN_OK;
     }
 
     else{
@@ -273,3 +288,23 @@ int cjoin(int tid)
     }
 
 }
+
+// -----------------------------------------------------------------------------
+
+int cyield(void){
+	if (!has_init)
+		init();
+
+	PNODE2 exe = malloc(sizeof(PNODE2));
+	exe->node = executingThread;
+	executingThread->state = PROCST_APTO;
+	if (AppendFila2(readyQueue, exe) != 0)
+		return RETURN_ERROR;		
+
+	if (swapcontext(&(executingThread->context), &(DispatcherContext)) == -1)
+		return RETURN_ERROR;
+
+	return RETURN_OK;
+
+} // end method
+

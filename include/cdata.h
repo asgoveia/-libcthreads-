@@ -33,9 +33,11 @@ typedef struct s_TCB {
 					// 0: Criação; 1: Apto; 2: Execução; 3: Bloqueado; 4: Término; 5: Apto-Suspenso; 6: Bloqueado-Suspenso
 	int 		prio;		// Prioridade associada a thread NÃO USADO NESSA IMPLEMENTAÇÃO
 	ucontext_t 	context;	// contexto de execução da thread (SP, PC, GPRs e recursos) 
-	int waited;
 	
 	/* Se necessário, pode-se acresecentar campos nessa estrutura A PARTIR DAQUI! */
+	
+	struct s_TCB * waitingFor;
+	struct s_TCB * waitedBy;
 	
 	
 } TCB_t; 
