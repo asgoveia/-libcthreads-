@@ -26,64 +26,74 @@ PNODE2 returnNode(int tid, PFILA2 queue)
     TCB_t *thread;
     PNODE2 current;
 
-    if (FirstFila2(queue) != 0){
+    if (FirstFila2(queue) != 0)
+    {
 
         printf("Erro ao setar para o primeiro da fila\n");
         return NULL;
     }
 
     do
+    {
+        current = (PNODE2)GetAtIteratorFila2(queue);
+        thread = (TCB_t *) current->node;
+        if(thread->tid == tid)
         {
-            current = (PNODE2)GetAtIteratorFila2(queue);
-            thread = (TCB_t *) current->node;
-            if(thread->tid == tid)
-            {
-                return current;
-            }
+            return current;
         }
-        while(NextFila2(queue) == 0);
+    }
+    while(NextFila2(queue) == 0);
     return NULL;
 }
 
 // -----------------------------------------------------------------------------
 
 int dispatcher()
-{  
-	printf("\nMae to na globo\n");
-	PNODE2 nextNode;
-	TCB_t * thread;
+{
+    //printf("\nMae to na globo");
+    PNODE2 nextNode;
+    TCB_t * thread;
 
-	if (hasThreadEnded){
-		PNODE2 newReadyNode;
-		TCB_t * newThread;
-		executingThread->state = PROCST_TERMINO;
-		int tid = executingThread->waitedBy;
-		if (FirstFila2(blockedQueue) == 0)
-			newReadyNode = returnNode(tid, blockedQueue);
-		if (newReadyNode != NULL){
-			newThread = (TCB_t *) newReadyNode->node;
-			newThread->state = PROCST_APTO;
-			DeleteAtIteratorFila2(blockedQueue);
-			AppendFila2(readyQueue, newReadyNode);
-		}
-	}
+    if (hasThreadEnded)
+    {
 
-	if (FirstFila2(readyQueue) != 0){
-		printf("opa\n");
-		exit (RETURN_ERROR);
-	}
-	nextNode = (PNODE2)GetAtIteratorFila2(readyQueue);
-	hasThreadEnded = 1;
-	if (nextNode != NULL){
-		thread = (TCB_t*) nextNode->node;
-		executingThread = thread;
-		thread->state = PROCST_EXEC;
-		DeleteAtIteratorFila2(readyQueue);
-		setcontext(&(thread->context));
-		return RETURN_OK;
-	}
-	printf("ninguém tá pronto");
-	
+        PNODE2 newReadyNode = NULL;
+        TCB_t * newThread;
+        executingThread->state = PROCST_TERMINO;
+        int tid = executingThread->waitedBy;
+
+        if (FirstFila2(blockedQueue) == 0)
+            newReadyNode = returnNode(tid, blockedQueue);
+
+        if (newReadyNode != NULL)
+        {
+            newThread = (TCB_t *) newReadyNode->node;
+            newThread->state = PROCST_APTO;
+            DeleteAtIteratorFila2(blockedQueue);
+            AppendFila2(readyQueue, newReadyNode);
+
+        }
+    }
+
+    if (FirstFila2(readyQueue) != 0)
+    {
+        printf("opa\n");
+        exit (RETURN_ERROR);
+    }
+    nextNode = (PNODE2)GetAtIteratorFila2(readyQueue);
+    hasThreadEnded = 1;
+
+    if (nextNode != NULL)
+    {
+        thread = (TCB_t*) nextNode->node;
+        executingThread = thread;
+        thread->state = PROCST_EXEC;
+        DeleteAtIteratorFila2(readyQueue);
+        setcontext(&(thread->context));
+        return RETURN_OK;
+    }
+    printf("ninguém tá pronto");
+
     return 0;
 } // end method
 
@@ -111,8 +121,8 @@ TCB_t* createThread(int prio)
         newThread->tid = tCounter;
         newThread->state = PROCST_CRIACAO;
         newThread->prio = prio;
-	newThread->waitedBy = -1;
-	newThread->waitingFor = -1;
+        newThread->waitedBy = -1;
+        newThread->waitingFor = -1;
         tCounter++;
 
         newThread->context.uc_stack.ss_sp = malloc(SIGSTKSZ);
@@ -195,7 +205,8 @@ int cidentify (char *name, int size)
 
 int ccreate (void *(*start)(void *), void *arg, int prio)
 {
-        if(!has_init){
+    if(!has_init)
+    {
         init();
     }
 
@@ -217,7 +228,7 @@ int ccreate (void *(*start)(void *), void *arg, int prio)
         return RETURN_ERROR;
     }
 
-return newThread->tid;
+    return newThread->tid;
 
 } // end method
 
@@ -229,22 +240,23 @@ int searchThread(int tid, PFILA2 queue)
     TCB_t *thread;
     PNODE2 current;
 
-    if (FirstFila2(queue) != 0){
+    if (FirstFila2(queue) != 0)
+    {
 
-        printf("Erro ao setar para o primeiro da fila\n");
+        //printf("Fila vazia ou erro ao setar para o primeiro da fila\n");
         return RETURN_ERROR;
     }
 
     do
+    {
+        current = (PNODE2)GetAtIteratorFila2(queue);
+        thread = (TCB_t *) current->node;
+        if(thread->tid == tid)
         {
-            current = (PNODE2)GetAtIteratorFila2(queue);
-            thread = (TCB_t *) current->node;
-            if(thread->tid == tid)
-            {
-                return 1;
-            }
+            return 1;
         }
-        while(NextFila2(queue) == 0);
+    }
+    while(NextFila2(queue) == 0);
     return 0;
 }
 
@@ -255,53 +267,60 @@ TCB_t* returnTCB(int tid, PFILA2 queue)
     TCB_t *thread;
     PNODE2 current;
 
-    if (FirstFila2(queue) != 0){
+    if (FirstFila2(queue) != 0)
+    {
 
-        printf("Erro ao setar para o primeiro da fila\n");
+        //printf("Fila vazia ou erro ao setar para o primeiro da fila\n");
         return NULL;
     }
 
     do
+    {
+        current = (PNODE2)GetAtIteratorFila2(queue);
+        thread = (TCB_t *) current->node;
+        if(thread->tid == tid)
         {
-            current = (PNODE2)GetAtIteratorFila2(queue);
-            thread = (TCB_t *) current->node;
-            if(thread->tid == tid)
-            {
-                return thread;
-            }
+            return thread;
         }
-        while(NextFila2(queue) == 0);
+    }
+    while(NextFila2(queue) == 0);
     return NULL;
 }
 
 
 // -----------------------------------------------------------------------------
 
-TCB_t* findThread(int tid){
+TCB_t* findThread(int tid)
+{
 
     TCB_t* tcb;
 
 
-    if(searchThread(tid, readyQueue)){
+    if(searchThread(tid, readyQueue))
+    {
         tcb = returnTCB(tid, readyQueue);
     }
 
-    else if(searchThread(tid, blockedQueue)){
+    else if(searchThread(tid, blockedQueue))
+    {
         tcb = returnTCB(tid, blockedQueue);
 
     }
 
-    else if(searchThread(tid, readySuspendedQueue)){
+    else if(searchThread(tid, readySuspendedQueue))
+    {
         tcb = returnTCB(tid, readySuspendedQueue);
 
     }
 
-    else if(searchThread(tid, blockedSuspendedQueue)){
+    else if(searchThread(tid, blockedSuspendedQueue))
+    {
         tcb = returnTCB(tid, blockedSuspendedQueue);
 
     }
 
-    else{
+    else
+    {
         printf("cjoin: thread nao existe\n");
         return NULL;
     }
@@ -315,8 +334,10 @@ TCB_t* findThread(int tid){
 
 int cjoin(int tid)
 {
-printf("join the club");
-    if(!has_init){
+    printf("join the club\n");
+
+    if(!has_init)
+    {
         init();
     }
 
@@ -327,24 +348,26 @@ printf("join the club");
 
     waitFor = findThread(tid);
 
-    if(waitFor != NULL && waitFor->waitedBy == -1){	
-	
-   	PNODE2 blockedNode = malloc(sizeof(PNODE2));
-    	blockedNode->node = waiting;
+    if(waitFor != NULL && waitFor->waitedBy == -1)
+    {
+
+        PNODE2 blockedNode = malloc(sizeof(PNODE2));
+        blockedNode->node = waiting;
 
         AppendFila2(blockedQueue, blockedNode);
         executingThread->state = PROCST_BLOQ;
-	waitFor->waitedBy = waiting->tid;
-	waiting->waitingFor = waitFor->tid;
-	hasThreadEnded = 0;
+        waitFor->waitedBy = waiting->tid;
+        waiting->waitingFor = waitFor->tid;
+        hasThreadEnded = 0;
 
         swapcontext(&(executingThread->context), &(DispatcherContext));
-		//return RETURN_ERROR;
-       
-	 return RETURN_OK;
+        //return RETURN_ERROR;
+
+        return RETURN_OK;
     }
 
-    else{
+    else
+    {
         return RETURN_ERROR;
     }
 
@@ -352,21 +375,22 @@ printf("join the club");
 
 // -----------------------------------------------------------------------------
 
-int cyield(void){
-	if (!has_init)
-		init();
+int cyield(void)
+{
+    if (!has_init)
+        init();
 
-	PNODE2 exe = malloc(sizeof(PNODE2));
-	exe->node = executingThread;
-	executingThread->state = PROCST_APTO;
-	if (AppendFila2(readyQueue, exe) != 0)
-		return RETURN_ERROR;	
-	hasThreadEnded = 0;	
+    PNODE2 exe = malloc(sizeof(PNODE2));
+    exe->node = executingThread;
+    executingThread->state = PROCST_APTO;
+    if (AppendFila2(readyQueue, exe) != 0)
+        return RETURN_ERROR;
+    hasThreadEnded = 0;
 
-	if (swapcontext(&(executingThread->context), &(DispatcherContext)) == -1)
-		return RETURN_ERROR;
+    if (swapcontext(&(executingThread->context), &(DispatcherContext)) == -1)
+        return RETURN_ERROR;
 
-	return RETURN_OK;
+    return RETURN_OK;
 
 } // end method
 
