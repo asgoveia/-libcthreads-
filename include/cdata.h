@@ -36,8 +36,8 @@ typedef struct s_TCB {
 	
 	/* Se necessário, pode-se acresecentar campos nessa estrutura A PARTIR DAQUI! */
 	
-	struct s_TCB * waitingFor;
-	struct s_TCB * waitedBy;
+	int waitingFor;
+	int waitedBy;
 	
 	
 } TCB_t; 

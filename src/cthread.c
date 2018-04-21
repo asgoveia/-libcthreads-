@@ -17,13 +17,73 @@ TCB_t * executingThread;
 ucontext_t DispatcherContext;
 int tCounter = 0;
 int has_init = 0;
+int hasThreadEnded = 0;
 
+// -----------------------------------------------------------------------------
+
+PNODE2 returnNode(int tid, PFILA2 queue)
+{
+    TCB_t *thread;
+    PNODE2 current;
+
+    if (FirstFila2(queue) != 0){
+
+        printf("Erro ao setar para o primeiro da fila\n");
+        return NULL;
+    }
+
+    do
+        {
+            current = (PNODE2)GetAtIteratorFila2(queue);
+            thread = (TCB_t *) current->node;
+            if(thread->tid == tid)
+            {
+                return current;
+            }
+        }
+        while(NextFila2(queue) == 0);
+    return NULL;
+}
 
 // -----------------------------------------------------------------------------
 
 int dispatcher()
-{  printf("\nMae to na globo\n");
-	setcontext(&(executingThread->context));
+{  
+	printf("\nMae to na globo\n");
+	PNODE2 nextNode;
+	TCB_t * thread;
+
+	if (hasThreadEnded){
+		PNODE2 newReadyNode;
+		TCB_t * newThread;
+		executingThread->state = PROCST_TERMINO;
+		int tid = executingThread->waitedBy;
+		if (FirstFila2(blockedQueue) == 0)
+			newReadyNode = returnNode(tid, blockedQueue);
+		if (newReadyNode != NULL){
+			newThread = (TCB_t *) newReadyNode->node;
+			newThread->state = PROCST_APTO;
+			DeleteAtIteratorFila2(blockedQueue);
+			AppendFila2(readyQueue, newReadyNode);
+		}
+	}
+
+	if (FirstFila2(readyQueue) != 0){
+		printf("opa\n");
+		exit (RETURN_ERROR);
+	}
+	nextNode = (PNODE2)GetAtIteratorFila2(readyQueue);
+	hasThreadEnded = 1;
+	if (nextNode != NULL){
+		thread = (TCB_t*) nextNode->node;
+		executingThread = thread;
+		thread->state = PROCST_EXEC;
+		DeleteAtIteratorFila2(readyQueue);
+		setcontext(&(thread->context));
+		return RETURN_OK;
+	}
+	printf("ninguém tá pronto");
+	
     return 0;
 } // end method
 
@@ -51,8 +111,8 @@ TCB_t* createThread(int prio)
         newThread->tid = tCounter;
         newThread->state = PROCST_CRIACAO;
         newThread->prio = prio;
-	newThread->waitedBy = NULL;
-	newThread->waitingFor = NULL;
+	newThread->waitedBy = -1;
+	newThread->waitingFor = -1;
         tCounter++;
 
         newThread->context.uc_stack.ss_sp = malloc(SIGSTKSZ);
@@ -255,6 +315,7 @@ TCB_t* findThread(int tid){
 
 int cjoin(int tid)
 {
+printf("join the club");
     if(!has_init){
         init();
     }
@@ -264,21 +325,21 @@ int cjoin(int tid)
     TCB_t * waiting;
     waiting = executingThread;
 
-
     waitFor = findThread(tid);
 
-    if(waitFor != NULL && waitFor->waitedBy == NULL){	
+    if(waitFor != NULL && waitFor->waitedBy == -1){	
 	
    	PNODE2 blockedNode = malloc(sizeof(PNODE2));
     	blockedNode->node = waiting;
 
         AppendFila2(blockedQueue, blockedNode);
         executingThread->state = PROCST_BLOQ;
-	waitFor->waitedBy = waiting;
-	waiting->waitingFor = waitFor;
+	waitFor->waitedBy = waiting->tid;
+	waiting->waitingFor = waitFor->tid;
+	hasThreadEnded = 0;
 
-        if (swapcontext(&(executingThread->context), &(DispatcherContext)) == -1)
-		return RETURN_ERROR;
+        swapcontext(&(executingThread->context), &(DispatcherContext));
+		//return RETURN_ERROR;
        
 	 return RETURN_OK;
     }
@@ -299,7 +360,8 @@ int cyield(void){
 	exe->node = executingThread;
 	executingThread->state = PROCST_APTO;
 	if (AppendFila2(readyQueue, exe) != 0)
-		return RETURN_ERROR;		
+		return RETURN_ERROR;	
+	hasThreadEnded = 0;	
 
 	if (swapcontext(&(executingThread->context), &(DispatcherContext)) == -1)
 		return RETURN_ERROR;
