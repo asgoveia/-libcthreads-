@@ -19,7 +19,8 @@ int tCounter = 0;
 int has_init = 0;
 int hasThreadEnded = 0;
 
-// -----------------------------------------------------------------------------
+
+
 
 PNODE2 returnNode(int tid, PFILA2 queue)
 {
@@ -48,6 +49,123 @@ PNODE2 returnNode(int tid, PFILA2 queue)
 
 // -----------------------------------------------------------------------------
 
+int searchThread(int tid, PFILA2 queue)
+{
+    TCB_t *thread;
+    PNODE2 current;
+
+    if (FirstFila2(queue) != 0)
+    {
+        //printf("Fila vazia ou erro ao setar para o primeiro da fila\n");
+        return RETURN_ERROR;
+    }
+
+    do
+    {
+        current = (PNODE2)GetAtIteratorFila2(queue);
+        thread = (TCB_t *) current->node;
+        if(thread->tid == tid)
+        {
+            return 1;
+        }
+    }
+    while(NextFila2(queue) == 0);
+    return 0;
+}
+
+// -----------------------------------------------------------------------------
+
+TCB_t* returnTCB(int tid, PFILA2 queue)
+{
+    TCB_t *thread;
+    PNODE2 current;
+
+    if (FirstFila2(queue) != 0)
+    {
+        //printf("Fila vazia ou erro ao setar para o primeiro da fila\n");
+        return NULL;
+    }
+
+    do
+    {
+        current = (PNODE2)GetAtIteratorFila2(queue);
+        thread = (TCB_t *) current->node;
+        if(thread->tid == tid)
+        {
+            return thread;
+        }
+    }
+    while(NextFila2(queue) == 0);
+    return NULL;
+}
+
+// -----------------------------------------------------------------------------
+
+int changeQueue(int tid, PFILA2 queueSource, PFILA2 queueDest, int state)
+{
+
+    TCB_t * change = NULL;
+
+    change = returnTCB(tid, queueSource);
+    PNODE2 changeNode = malloc(sizeof(PNODE2));
+    changeNode->node = change;
+    change->state = state;
+
+    if (AppendFila2(queueDest, changeNode) != 0)
+    {
+        printf("Erro ao trocar de fila\n");
+        return RETURN_ERROR;
+    }
+
+    if(DeleteAtIteratorFila2(queueSource) != 0)
+    {
+        printf("Erro ao deletar da fila de origem\n");
+        return RETURN_ERROR;
+    }
+
+    return RETURN_OK;
+}
+
+
+// -----------------------------------------------------------------------------
+
+TCB_t* findThread(int tid)
+{
+    TCB_t* tcb;
+
+    if(searchThread(tid, readyQueue))
+    {
+        tcb = returnTCB(tid, readyQueue);
+    }
+
+    else if(searchThread(tid, blockedQueue))
+    {
+        tcb = returnTCB(tid, blockedQueue);
+
+    }
+
+    else if(searchThread(tid, readySuspendedQueue))
+    {
+        tcb = returnTCB(tid, readySuspendedQueue);
+
+    }
+
+    else if(searchThread(tid, blockedSuspendedQueue))
+    {
+        tcb = returnTCB(tid, blockedSuspendedQueue);
+
+    }
+
+    else
+    {
+        printf("Thread nao existe\n");
+        return NULL;
+    }
+
+    return tcb;
+}
+// -----------------------------------------------------------------------------
+
 int dispatcher()
 {
     //printf("\nMae to na globo");
@@ -62,8 +180,11 @@ int dispatcher()
         executingThread->state = PROCST_TERMINO;
         int tid = executingThread->waitedBy;
 
-        if (FirstFila2(blockedQueue) == 0)
+        if (LastFila2(blockedQueue) == 0)
+        {
             newReadyNode = returnNode(tid, blockedQueue);
+        }
+
 
         if (newReadyNode != NULL)
         {
@@ -235,106 +356,10 @@ int ccreate (void *(*start)(void *), void *arg, int prio)
 
 // -----------------------------------------------------------------------------
 
-int searchThread(int tid, PFILA2 queue)
-{
-    TCB_t *thread;
-    PNODE2 current;
-
-    if (FirstFila2(queue) != 0)
-    {
-
-        //printf("Fila vazia ou erro ao setar para o primeiro da fila\n");
-        return RETURN_ERROR;
-    }
-
-    do
-    {
-        current = (PNODE2)GetAtIteratorFila2(queue);
-        thread = (TCB_t *) current->node;
-        if(thread->tid == tid)
-        {
-            return 1;
-        }
-    }
-    while(NextFila2(queue) == 0);
-    return 0;
-}
-
-// -----------------------------------------------------------------------------
-
-TCB_t* returnTCB(int tid, PFILA2 queue)
-{
-    TCB_t *thread;
-    PNODE2 current;
-
-    if (FirstFila2(queue) != 0)
-    {
-
-        //printf("Fila vazia ou erro ao setar para o primeiro da fila\n");
-        return NULL;
-    }
-
-    do
-    {
-        current = (PNODE2)GetAtIteratorFila2(queue);
-        thread = (TCB_t *) current->node;
-        if(thread->tid == tid)
-        {
-            return thread;
-        }
-    }
-    while(NextFila2(queue) == 0);
-    return NULL;
-}
-
-
-// -----------------------------------------------------------------------------
-
-TCB_t* findThread(int tid)
-{
-
-    TCB_t* tcb;
-
-
-    if(searchThread(tid, readyQueue))
-    {
-        tcb = returnTCB(tid, readyQueue);
-    }
-
-    else if(searchThread(tid, blockedQueue))
-    {
-        tcb = returnTCB(tid, blockedQueue);
-
-    }
-
-    else if(searchThread(tid, readySuspendedQueue))
-    {
-        tcb = returnTCB(tid, readySuspendedQueue);
-
-    }
-
-    else if(searchThread(tid, blockedSuspendedQueue))
-    {
-        tcb = returnTCB(tid, blockedSuspendedQueue);
-
-    }
-
-    else
-    {
-        printf("cjoin: thread nao existe\n");
-        return NULL;
-    }
-
-    return tcb;
-}
-
-
-
-// -----------------------------------------------------------------------------
 
 int cjoin(int tid)
 {
-    printf("join the club\n");
+    //printf("join the club\n");
 
     if(!has_init)
     {
@@ -361,8 +386,6 @@ int cjoin(int tid)
         hasThreadEnded = 0;
 
         swapcontext(&(executingThread->context), &(DispatcherContext));
-        //return RETURN_ERROR;
-
         return RETURN_OK;
     }
 
@@ -393,4 +416,135 @@ int cyield(void)
     return RETURN_OK;
 
 } // end method
+
+// -----------------------------------------------------------------------------
+
+int csuspend(int tid)
+{
+
+    if(!has_init)
+    {
+        init();
+    }
+
+    if(searchThread(tid, readyQueue))
+    {
+        if(changeQueue(tid, readyQueue, readySuspendedQueue, PROCST_APTO_SUS) != 0)
+        {
+            // printf("csuspend: Erro ao passar para apto suspenso\n");
+            return RETURN_ERROR;
+        }
+
+    }
+
+    else if(searchThread(tid, blockedQueue))
+    {
+        if(changeQueue(tid, blockedQueue, blockedSuspendedQueue, PROCST_BLOQ_SUS) != 0)
+        {
+            // printf("csuspend: Erro ao passar para bloqueado suspenso\n");
+            return RETURN_ERROR;
+        }
+    }
+
+    return RETURN_OK;
+}
+
+
+// -----------------------------------------------------------------------------
+
+int cresume(int tid)
+{
+
+    if(!has_init)
+    {
+        init();
+    }
+
+    if(searchThread(tid, readySuspendedQueue))
+    {
+        if(changeQueue(tid, readySuspendedQueue, readyQueue, PROCST_APTO) != 0)
+        {
+            // printf("cresume: Erro ao passar para apto\n");
+            return RETURN_ERROR;
+        }
+
+    }
+
+    else if(searchThread(tid, blockedSuspendedQueue))
+    {
+        if(changeQueue(tid, blockedSuspendedQueue, blockedQueue,PROCST_BLOQ) != 0)
+        {
+            // printf("cresume: Erro ao passar para bloqueado\n");
+            return RETURN_ERROR;
+        }
+    }
+
+    return RETURN_OK;
+}
+
+
+
+//-------------------------------------------------------------------------------------
+
+//Pode ignorar daqui pra baixo
+
+/*void printFila(PFILA2 queue)
+{
+
+    TCB_t *thread;
+    PNODE2 current;
+
+    if (FirstFila2(queue) != 0)
+    {
+        printf("printFila: Fila vazia ou erro ao setar para o primeiro da fila\n");
+    }
+
+    else{
+
+        do
+        {
+            current = (PNODE2)GetAtIteratorFila2(queue);
+            thread = (TCB_t *) current->node;
+            printf("Tid: %d\n", thread->tid);
+        }
+        while(NextFila2(queue) == 0);
+    }
+}
+
+
+
+void teste()
+{
+
+    printFila(readySuspendedQueue);
+
+}
+
+
+int removeFromQueue(int tid, PFILA2 queue)
+{
+    TCB_t *thread;
+    PNODE2 current;
+
+    if(FirstFila2(queue) == 0)
+    {
+
+        do
+        {
+            current = (PNODE2)GetAtIteratorFila2(queue);
+            thread = (TCB_t *) current->node;
+            if(thread->tid == tid)
+            {
+                printf("Achou para deletar\n");
+                DeleteAtIteratorFila2(queue);
+                return RETURN_OK;
+            }
+        }
+        while(NextFila2(queue) == 0);
+    }
+
+
+    return RETURN_ERROR;
+}*/
+
 
