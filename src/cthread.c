@@ -20,8 +20,6 @@ int has_init = 0;
 int hasThreadEnded = 0;
 
 
-
-
 PNODE2 returnNode(int tid, PFILA2 queue)
 {
     TCB_t *thread;
@@ -57,7 +55,7 @@ int searchThread(int tid, PFILA2 queue)
     if (FirstFila2(queue) != 0)
     {
         //printf("Fila vazia ou erro ao setar para o primeiro da fila\n");
-        return RETURN_ERROR;
+        return FALSE;
     }
 
     do
@@ -66,11 +64,11 @@ int searchThread(int tid, PFILA2 queue)
         thread = (TCB_t *) current->node;
         if(thread->tid == tid)
         {
-            return 1;
+            return TRUE;
         }
     }
     while(NextFila2(queue) == 0);
-    return 0;
+    return FALSE;
 }
 
 // -----------------------------------------------------------------------------
@@ -180,20 +178,44 @@ int dispatcher()
         executingThread->state = PROCST_TERMINO;
         int tid = executingThread->waitedBy;
 
-        if (LastFila2(blockedQueue) == 0)
-        {
-            newReadyNode = returnNode(tid, blockedQueue);
+        if(searchThread(tid, blockedQueue)){
+
+            if (LastFila2(blockedQueue) == 0)
+            {
+                newReadyNode = returnNode(tid, blockedQueue);
+            }
+
+
+            if (newReadyNode != NULL)
+            {
+                newThread = (TCB_t *) newReadyNode->node;
+                newThread->state = PROCST_APTO;
+                DeleteAtIteratorFila2(blockedQueue);
+                AppendFila2(readyQueue, newReadyNode);
+
+            }
         }
 
+        else if(searchThread(tid, blockedSuspendedQueue)){
 
-        if (newReadyNode != NULL)
-        {
-            newThread = (TCB_t *) newReadyNode->node;
-            newThread->state = PROCST_APTO;
-            DeleteAtIteratorFila2(blockedQueue);
-            AppendFila2(readyQueue, newReadyNode);
+
+            if (LastFila2(blockedSuspendedQueue) == 0)
+            {
+                newReadyNode = returnNode(tid, blockedSuspendedQueue);
+            }
+
+
+            if (newReadyNode != NULL)
+            {
+                newThread = (TCB_t *) newReadyNode->node;
+                newThread->state = PROCST_APTO_SUS;
+                DeleteAtIteratorFila2(blockedSuspendedQueue);
+                AppendFila2(readySuspendedQueue, newReadyNode);
+
+            }
 
         }
+
     }
 
     if (FirstFila2(readyQueue) != 0)
@@ -431,7 +453,7 @@ int csuspend(int tid)
     {
         if(changeQueue(tid, readyQueue, readySuspendedQueue, PROCST_APTO_SUS) != 0)
         {
-            // printf("csuspend: Erro ao passar para apto suspenso\n");
+            printf("csuspend: Erro ao passar para apto suspenso\n");
             return RETURN_ERROR;
         }
 
@@ -441,9 +463,15 @@ int csuspend(int tid)
     {
         if(changeQueue(tid, blockedQueue, blockedSuspendedQueue, PROCST_BLOQ_SUS) != 0)
         {
-            // printf("csuspend: Erro ao passar para bloqueado suspenso\n");
+            printf("csuspend: Erro ao passar para bloqueado suspenso\n");
             return RETURN_ERROR;
         }
+    }
+
+    else{
+
+        printf("csuspend: thread nao existe em apto nem em bloqueado\n");
+        return RETURN_ERROR;
     }
 
     return RETURN_OK;
@@ -477,6 +505,12 @@ int cresume(int tid)
             // printf("cresume: Erro ao passar para bloqueado\n");
             return RETURN_ERROR;
         }
+    }
+
+    else{
+
+        printf("cresume: thread nao existe em apto suspenso nem em bloqueado suspenso\n");
+        return RETURN_ERROR;
     }
 
     return RETURN_OK;
