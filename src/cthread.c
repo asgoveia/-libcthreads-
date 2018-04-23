@@ -139,19 +139,16 @@ TCB_t* findThread(int tid)
     else if(searchThread(tid, blockedQueue))
     {
         tcb = returnTCB(tid, blockedQueue);
-
     }
 
     else if(searchThread(tid, readySuspendedQueue))
     {
         tcb = returnTCB(tid, readySuspendedQueue);
-
     }
 
     else if(searchThread(tid, blockedSuspendedQueue))
     {
         tcb = returnTCB(tid, blockedSuspendedQueue);
-
     }
 
     else
@@ -515,6 +512,27 @@ int cresume(int tid)
 
     return RETURN_OK;
 }
+//-------------------------------------------------------------------------------------
+
+int csem_init (csem_t *sem, int count){
+
+    if(!has_init)
+    {
+        init();
+    }
+
+    sem->fila = malloc(sizeof(FILA2));
+   
+
+    if(CreateFila2(sem->fila) == 0){
+        sem->count = count;
+        return RETURN_OK;
+    }
+
+    return RETURN_ERROR;
+}
+
+//-------------------------------------------------------------------------------------
 
 
 
