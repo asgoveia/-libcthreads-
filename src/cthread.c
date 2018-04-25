@@ -612,10 +612,16 @@ int csignal(csem_t *sem)
                 changeQueue(thread->tid, blockedQueue, readyQueue, PROCST_APTO);
                 DeleteAtIteratorFila2(sem->fila);
             }
+            
+            else if(searchThread(thread->tid, blockedSuspendedQueue)){
+                //printf("threadApta: %d\n", thread->tid);
+                changeQueue(thread->tid, blockedSuspendedQueue, readySuspendedQueue, PROCST_APTO_SUS);
+                DeleteAtIteratorFila2(sem->fila);
+            }
 
             else{
 
-                printf("csignal: nao achou a thread em bloqueado\n");
+                printf("csignal: nao achou a thread em bloqueado nem em bloqueado suspenso\n");
                 return RETURN_ERROR;
             }
         }
