@@ -175,7 +175,8 @@ int dispatcher()
         executingThread->state = PROCST_TERMINO;
         int tid = executingThread->waitedBy;
 
-        if(searchThread(tid, blockedQueue)){
+        if(searchThread(tid, blockedQueue))
+        {
 
             if (LastFila2(blockedQueue) == 0)
             {
@@ -193,7 +194,8 @@ int dispatcher()
             }
         }
 
-        else if(searchThread(tid, blockedSuspendedQueue)){
+        else if(searchThread(tid, blockedSuspendedQueue))
+        {
 
 
             if (LastFila2(blockedSuspendedQueue) == 0)
@@ -465,7 +467,8 @@ int csuspend(int tid)
         }
     }
 
-    else{
+    else
+    {
 
         printf("csuspend: thread nao existe em apto nem em bloqueado\n");
         return RETURN_ERROR;
@@ -504,7 +507,8 @@ int cresume(int tid)
         }
     }
 
-    else{
+    else
+    {
 
         printf("cresume: thread nao existe em apto suspenso nem em bloqueado suspenso\n");
         return RETURN_ERROR;
@@ -514,7 +518,8 @@ int cresume(int tid)
 }
 //-------------------------------------------------------------------------------------
 
-int csem_init (csem_t *sem, int count){
+int csem_init (csem_t *sem, int count)
+{
 
     if(!has_init)
     {
@@ -522,9 +527,9 @@ int csem_init (csem_t *sem, int count){
     }
 
     sem->fila = malloc(sizeof(FILA2));
-   
 
-    if(CreateFila2(sem->fila) == 0){
+    if(CreateFila2(sem->fila) == 0)
+    {
         sem->count = count;
         return RETURN_OK;
     }
@@ -533,7 +538,94 @@ int csem_init (csem_t *sem, int count){
 }
 
 //-------------------------------------------------------------------------------------
+int cwait (csem_t *sem)
+{
+    if(!has_init)
+    {
+        init();
+    }
 
+    sem->count--;
+
+    if(sem->count >= 0)
+    {
+        return RETURN_OK;
+    }
+
+    TCB_t* thread = executingThread;
+    thread->state = PROCST_BLOQ;
+
+    //Será que precisa dessas paradas?
+
+    PNODE2 node = malloc(sizeof(PNODE2));
+    node->node = thread;
+
+    if(AppendFila2(sem->fila, (void *)node) == 0)
+    {
+
+        if(AppendFila2(blockedQueue, (void *)node) == 0)
+        {
+
+            hasThreadEnded = 0;
+            swapcontext(&(thread->context), &(DispatcherContext));
+            return RETURN_OK;
+        }
+
+    }
+
+    printf("Deu ruim na cwait\n");
+
+    return RETURN_ERROR;
+}
+//-------------------------------------------------------------------------------------
+
+
+int csignal(csem_t *sem)
+{
+    TCB_t* thread;
+
+    if(!has_init)
+    {
+        init();
+    }
+
+   /* if(sem->fila == NULL){
+
+        printf("Sem fila do semaforo\n");
+        return RETURN_ERROR;
+    }*/
+
+    sem->count++;
+
+    if(sem->count <= 0){ //ainda tem gente na fila
+
+        if(FirstFila2(sem->fila) == 0){
+
+            PNODE2 node;
+            node = GetAtIteratorFila2(sem->fila);
+            thread = (TCB_t *) node->node;
+
+            //Precisa procurar em bloqueado suspenso tambem?
+
+            if(searchThread(thread->tid, blockedQueue)){
+                //printf("threadApta: %d\n", thread->tid);
+                changeQueue(thread->tid, blockedQueue, readyQueue, PROCST_APTO);
+                DeleteAtIteratorFila2(sem->fila);
+            }
+
+            else{
+
+                printf("csignal: nao achou a thread em bloqueado\n");
+                return RETURN_ERROR;
+            }
+        }
+
+        else
+            RETURN_ERROR;
+    }
+
+    return RETURN_OK;
+}
 
 
 //-------------------------------------------------------------------------------------
@@ -598,5 +690,3 @@ int removeFromQueue(int tid, PFILA2 queue)
 
     return RETURN_ERROR;
 }*/
-
-
