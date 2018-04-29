@@ -7,6 +7,9 @@
  * VERSÃO: 17/03/2018
  *
  */
+#include "../include/support.h"
+
+
 #ifndef __cdata__
 #define __cdata__
 #include "ucontext.h"
@@ -21,6 +24,7 @@
 
 #define RETURN_ERROR -1
 #define RETURN_OK 0
+
 #define TRUE 1
 #define FALSE 0
 
@@ -35,12 +39,15 @@ typedef struct s_TCB {
 	ucontext_t 	context;	// contexto de execução da thread (SP, PC, GPRs e recursos) 
 	
 	/* Se necessário, pode-se acresecentar campos nessa estrutura A PARTIR DAQUI! */
-	
 	int waitingFor;
 	int waitedBy;
 	
-	
 } TCB_t; 
 
+void printFila(PFILA2 queue);
+void printReadySus();
+void printReady();
+void printBlocked();
+void printBlockedSus();
 
 #endif
