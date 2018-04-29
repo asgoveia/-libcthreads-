@@ -18,16 +18,16 @@ void* func0() {
 	cresume(thread3);
 	printReady();
 	printReadySus();
-    printf("Terminando #thread1\n");
+        printf("Terminando #thread1\n");
 	return 0;
 }
 
 void* func1() {
-	printf("\nEu sou a thread2\n");
+    printf("\nEu sou a thread2\n");
     printf("#thread2 cjoin thread3\n");
     cjoin(thread3);
-	printf("\nTerminando #thread2\n");
-	return 0;
+    printf("\nTerminando #thread2\n");
+    return 0;
 }
 
 void* func2() {
@@ -47,20 +47,20 @@ int main()
 {
     printf("\nFUNCOES TESTADAS: CCREATE, CJOIN, CSUSPEND, CRESUME\n");
     printf("DIGITE ALGO PARA INICIAR\n");
-	getchar();
+    getchar();
 
-	printf("#main: criando 3 threads\n");
-	thread1 = ccreate (func0, (void *) NULL, 0);
-	thread2 = ccreate (func1, (void *) NULL, 0);
-	thread3 = ccreate (func2, (void *) NULL, 0);
+    printf("#main: criando 3 threads\n");
+    thread1 = ccreate (func0, (void *) NULL, 0);
+    thread2 = ccreate (func1, (void *) NULL, 0);
+    thread3 = ccreate (func2, (void *) NULL, 0);
 
-	printReady();
+    printReady();
 
-	printf("#main chamando cjoin thread1\n");
-	cjoin(thread1);
-
-	printf("\nDe volta a main\n");
-	printReadySus();
+    printf("#main chamando cjoin thread1\n");
+    cjoin(thread1);
+    
+    printf("\nDe volta a main\n");
+    printReadySus();
     printf("#main resumindo thread2\n");
     cresume(thread2);
     printReady();
@@ -68,8 +68,8 @@ int main()
     printf("#main cjoin thread2\n");
     cjoin(thread2);
 
-	printf("\nTerminando #main\n");
+    printf("\nTerminando #main\n");
 
-	return 0;
+    return 0;
 }
 
