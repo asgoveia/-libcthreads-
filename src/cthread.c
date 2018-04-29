@@ -544,6 +544,12 @@ int cwait (csem_t *sem)
     {
         init();
     }
+    
+    if(sem->fila == NULL){
+
+        printf("Sem fila do semaforo\n");
+        return RETURN_ERROR;
+    }
 
     sem->count--;
 
@@ -554,8 +560,6 @@ int cwait (csem_t *sem)
 
     TCB_t* thread = executingThread;
     thread->state = PROCST_BLOQ;
-
-    //Será que precisa dessas paradas?
 
     PNODE2 node = malloc(sizeof(PNODE2));
     node->node = thread;
@@ -589,11 +593,11 @@ int csignal(csem_t *sem)
         init();
     }
 
-   /* if(sem->fila == NULL){
+    if(sem->fila == NULL){
 
         printf("Sem fila do semaforo\n");
         return RETURN_ERROR;
-    }*/
+    }
 
     sem->count++;
 
@@ -605,16 +609,12 @@ int csignal(csem_t *sem)
             node = GetAtIteratorFila2(sem->fila);
             thread = (TCB_t *) node->node;
 
-            //Precisa procurar em bloqueado suspenso tambem?
-
             if(searchThread(thread->tid, blockedQueue)){
-                //printf("threadApta: %d\n", thread->tid);
                 changeQueue(thread->tid, blockedQueue, readyQueue, PROCST_APTO);
                 DeleteAtIteratorFila2(sem->fila);
             }
             
             else if(searchThread(thread->tid, blockedSuspendedQueue)){
-                //printf("threadApta: %d\n", thread->tid);
                 changeQueue(thread->tid, blockedSuspendedQueue, readySuspendedQueue, PROCST_APTO_SUS);
                 DeleteAtIteratorFila2(sem->fila);
             }
@@ -636,9 +636,9 @@ int csignal(csem_t *sem)
 
 //-------------------------------------------------------------------------------------
 
-//Pode ignorar daqui pra baixo
+//Funções para testes
 
-/*void printFila(PFILA2 queue)
+void printFila(PFILA2 queue)
 {
 
     TCB_t *thread;
@@ -646,7 +646,7 @@ int csignal(csem_t *sem)
 
     if (FirstFila2(queue) != 0)
     {
-        printf("printFila: Fila vazia ou erro ao setar para o primeiro da fila\n");
+        printf("fila vazia\n");
     }
 
     else{
@@ -663,15 +663,27 @@ int csignal(csem_t *sem)
 
 
 
-void teste()
+void printReadySus()
 {
-
     printFila(readySuspendedQueue);
-
 }
 
+void printReady()
+{
+    printFila(readyQueue);
+}
 
-int removeFromQueue(int tid, PFILA2 queue)
+void printBlocked()
+{
+    printFila(blockedQueue);
+}
+
+void printBlockedSus()
+{
+    printFila(blockedSuspendedQueue);
+}
+
+/*int removeFromQueue(int tid, PFILA2 queue)
 {
     TCB_t *thread;
     PNODE2 current;
