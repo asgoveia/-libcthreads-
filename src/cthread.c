@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "../include/cthread.h"
 #include "../include/cdata.h"
@@ -153,7 +152,7 @@ TCB_t* findThread(int tid)
 
     else
     {
-        printf("Thread nao existe\n");
+        //printf("Thread nao existe\n");
         return NULL;
     }
 
@@ -332,13 +331,20 @@ int init()
 int cidentify (char *name, int size)
 {
     char id_grupo[72] = "Amanda Goveia 242259\nIsadora Oliveira 264109\nVictoria Elizabetha 261575\n";
-
+    int i = 0;
 
     if (size >= 72)
     {
-        strcpy(name, id_grupo);
+        while (i <= 72){
+
+            name[i] = id_grupo[i];
+            i++;
+        }
+
         return RETURN_OK;
-    } // end if
+    }
+
+
 
     return RETURN_ERROR;
 } // end method
@@ -544,7 +550,7 @@ int cwait (csem_t *sem)
     {
         init();
     }
-    
+
     if(sem->fila == NULL){
 
         printf("Sem fila do semaforo\n");
@@ -569,16 +575,13 @@ int cwait (csem_t *sem)
 
         if(AppendFila2(blockedQueue, (void *)node) == 0)
         {
-
             hasThreadEnded = 0;
             swapcontext(&(thread->context), &(DispatcherContext));
             return RETURN_OK;
         }
-
     }
 
     printf("Deu ruim na cwait\n");
-
     return RETURN_ERROR;
 }
 //-------------------------------------------------------------------------------------
@@ -610,11 +613,13 @@ int csignal(csem_t *sem)
             thread = (TCB_t *) node->node;
 
             if(searchThread(thread->tid, blockedQueue)){
+
                 changeQueue(thread->tid, blockedQueue, readyQueue, PROCST_APTO);
                 DeleteAtIteratorFila2(sem->fila);
             }
-            
+
             else if(searchThread(thread->tid, blockedSuspendedQueue)){
+
                 changeQueue(thread->tid, blockedSuspendedQueue, readySuspendedQueue, PROCST_APTO_SUS);
                 DeleteAtIteratorFila2(sem->fila);
             }
@@ -627,7 +632,7 @@ int csignal(csem_t *sem)
         }
 
         else
-            RETURN_ERROR;
+            return RETURN_ERROR;
     }
 
     return RETURN_OK;
@@ -636,7 +641,7 @@ int csignal(csem_t *sem)
 
 //-------------------------------------------------------------------------------------
 
-//Funções para testes
+//Funções de teste
 
 void printFila(PFILA2 queue)
 {
@@ -655,9 +660,10 @@ void printFila(PFILA2 queue)
         {
             current = (PNODE2)GetAtIteratorFila2(queue);
             thread = (TCB_t *) current->node;
-            printf("Tid: %d\n", thread->tid);
+            printf("%d ", thread->tid);
         }
         while(NextFila2(queue) == 0);
+        printf("\n");
     }
 }
 
@@ -665,23 +671,30 @@ void printFila(PFILA2 queue)
 
 void printReadySus()
 {
+    printf("Fila de aptos suspensos: ");
     printFila(readySuspendedQueue);
 }
 
+
 void printReady()
 {
+    printf("Fila de aptos: ");
     printFila(readyQueue);
 }
 
 void printBlocked()
 {
+    printf("Fila de bloqueados: ");
     printFila(blockedQueue);
 }
 
 void printBlockedSus()
 {
+    printf("Fila de bloqueados suspensos: ");
     printFila(blockedSuspendedQueue);
 }
+
+
 
 /*int removeFromQueue(int tid, PFILA2 queue)
 {
