@@ -49,9 +49,15 @@ void* func3() {
 
 int main()
 {
-    printf("\nFUNCOES TESTADAS: CCREATE, CYIELD, CSEM_INIT, CWAIT, CSIGNAL\n");
+    printf("\nFUNCOES TESTADAS: CIDENTIFY, CCREATE, CYIELD, CSEM_INIT, CWAIT, CSIGNAL\n");
     printf("DIGITE ALGO PARA INICIAR\n");
     getchar();
+
+    char * name = (char*) malloc(sizeof(char)*72);
+
+    cidentify (name, 72);
+
+    printf("%s\n", name);
 
     printf("#main: criando 4 threads\n");
     thread1 = ccreate (func0, (void *) NULL, 0);
